@@ -3,10 +3,15 @@ name: Build Nuitka Single File Executable
 
 on:
   push:
-    tags: ['v*']  # 打标签时触发
+    tags: ['v*']
   release:
-    types: [published]  # 发布时触发
-  workflow_dispatch:  # 手动触发
+    types: [published]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.10'
+  APP_NAME: 'SchoolAuto'
+  SOURCE_DIR: 'source'
 
 jobs:
   build-windows:
@@ -18,7 +23,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: ${{ env.PYTHON_VERSION }}
         cache: 'pip'
 
     - name: Install dependencies
@@ -31,8 +36,9 @@ jobs:
       run: |
         python -m playwright install chromium
 
-    - name: Build with Nuitka
+    - name: Build with Nuitka (from source directory)
       run: |
+        cd ${{ env.SOURCE_DIR }}
         python -m nuitka ^
           --standalone ^
           --onefile ^
@@ -44,19 +50,23 @@ jobs:
           --include-package=pytz ^
           --include-package=greenlet ^
           --include-package=pyee ^
+          --include-package=websockets ^
           --include-data-dir=%USERPROFILE%\.cache\ms-playwright=playwright\browsers ^
-          --output-filename=SchoolAuto.exe ^
-          source/main.py
+          --output-dir=../dist ^
+          --output-filename=${{ env.APP_NAME }}-Windows.exe ^
+          main.py
 
-    - name: Test executable
+    - name: Create checksum
       run: |
-        .\SchoolAuto.exe --version || echo "Executable test completed"
+        CertUtil -hashfile dist\${{ env.APP_NAME }}-Windows.exe SHA256 | findstr /v "CertUtil" > dist\${{ env.APP_NAME }}-Windows.exe.sha256
 
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
       with:
-        name: SchoolAuto-Windows
-        path: SchoolAuto.exe
+        name: ${{ env.APP_NAME }}-Windows
+        path: |
+          dist/${{ env.APP_NAME }}-Windows.exe
+          dist/${{ env.APP_NAME }}-Windows.exe.sha256
         retention-days: 30
 
   build-linux:
@@ -68,7 +78,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: ${{ env.PYTHON_VERSION }}
         cache: 'pip'
 
     - name: Install system dependencies
@@ -86,8 +96,9 @@ jobs:
       run: |
         python -m playwright install chromium
 
-    - name: Build with Nuitka
+    - name: Build with Nuitka (from source directory)
       run: |
+        cd ${{ env.SOURCE_DIR }}
         python -m nuitka \
           --standalone \
           --onefile \
@@ -98,18 +109,26 @@ jobs:
           --include-package=pytz \
           --include-package=greenlet \
           --include-package=pyee \
+          --include-package=websockets \
           --include-data-dir=$HOME/.cache/ms-playwright=playwright/browsers \
-          --output-filename=SchoolAuto \
-          source/main.py
+          --output-dir=../dist \
+          --output-filename=${{ env.APP_NAME }}-Linux \
+          main.py
 
     - name: Make executable
-      run: chmod +x SchoolAuto
+      run: chmod +x dist/${{ env.APP_NAME }}-Linux
+
+    - name: Create checksum
+      run: |
+        cd dist && sha256sum ${{ env.APP_NAME }}-Linux > ${{ env.APP_NAME }}-Linux.sha256
 
     - name: Upload Linux artifact
       uses: actions/upload-artifact@v4
       with:
-        name: SchoolAuto-Linux
-        path: SchoolAuto
+        name: ${{ env.APP_NAME }}-Linux
+        path: |
+          dist/${{ env.APP_NAME }}-Linux
+          dist/${{ env.APP_NAME }}-Linux.sha256
         retention-days: 30
 
   create-release:
@@ -125,20 +144,22 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          SchoolAuto-Windows/SchoolAuto.exe
-          SchoolAuto-Linux/SchoolAuto
+          ${{ env.APP_NAME }}-Windows/${{ env.APP_NAME }}-Windows.exe
+          ${{ env.APP_NAME }}-Linux/${{ env.APP_NAME }}-Linux
         body: |
           自动构建的 SchoolAuto 单文件可执行程序
           
-          **包含组件:**
+          **构建信息:**
+          - 工作目录: ${{ env.SOURCE_DIR }}/
+          - 主程序: main.py
+          - 构建时间: ${{ github.event.release.created_at }}
+          - 提交版本: ${{ github.sha }}
+          
+          **包含依赖:**
           - icalendar==6.3.1
           - keyring==25.6.0
           - pandas==2.3.3
           - playwright==1.55.0
           - pytz==2025.2
-          
-          **构建信息:**
-          - 构建时间: ${{ github.event.release.created_at }}
-          - 提交版本: ${{ github.sha }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
