@@ -93,6 +93,8 @@ def process_all(excel_file: str = CONFIG['excel_file']) -> None:
             for info in infos:
                 course, class_name, teacher, times, numbers, location = info
                 print('解析出：', course, class_name, teacher, times, numbers, location)
+                #去除times前可能有的逗号
+                times = times.lstrip(',')
 
                 saw = utils.start_and_end_week(times)
                 if isinstance(saw, tuple):
