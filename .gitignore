@@ -1,5 +1,7 @@
 .idea
 .vscode
-.xls
-.ics
+*.xls
+*.ics
+source/*.ics
+source/*.xls
 test.py
