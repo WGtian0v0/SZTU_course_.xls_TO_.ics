@@ -1,0 +1,2 @@
+cd source
+python -m nuitka --standalone --onefile --windows-console-mode=force --playwright-include-browser=all --assume-yes-for-downloads --include-package=icalendar --include-package=keyring --include-package=pandas --include-package=playwright --include-package=pytz --output-filename=../SZTU_course_xls2ics.exe main.py
