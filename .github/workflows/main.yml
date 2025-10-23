@@ -17,7 +17,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.12'
 
     - name: Install Python dependencies
       run: |
@@ -31,18 +31,17 @@ jobs:
 
     - name: Build with Nuitka
       run: |
-        cd source
-        python -m nuitka --standalone --onefile --windows-console-mode=force --playwright-include-browser=all --include-package=icalendar --include-package=keyring --include-package=pandas --include-package=playwright --include-package=pytz --include-package=greenlet --include-package=pyee --include-package=websockets --output-filename=../SZTU_course_xls2ics.exe main.py
+        build.bat
 
     - name: Verify build
       run: |
         echo "构建完成，检查文件..."
-        ls -la SchoolAuto.exe
-        echo "文件大小: $(stat -c%s SchoolAuto.exe) bytes"
+        ls -la SZTU_course_xls2ics.exe
+        echo "文件大小: $(stat -c%s SZTU_course_xls2ics.exe) bytes"
 
     - name: Upload executable
       uses: actions/upload-artifact@v4
       with:
-        name: SchoolAuto-Windows
-        path: SchoolAuto.exe
+        name: SZTU_course_xls2ics-Windows
+        path: SZTU_course_xls2ics.exe
         retention-days: 30
