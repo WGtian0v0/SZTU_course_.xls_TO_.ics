@@ -40,7 +40,7 @@ if __name__ == '__main__':
     is_saved_account, saved_account, saved_password = get_account()
     while not is_choose:
         #清屏
-        os.system('cls' if os.name == 'nt' else 'clear')
+        #os.system('cls' if os.name == 'nt' else 'clear')
         if debug:
             print("调试网页模式已开启")
         is_choose, choice = choose(is_saved_account)

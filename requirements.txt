@@ -4,3 +4,4 @@ pandas==2.3.3
 playwright==1.55.0
 pytz==2025.2
 xlrd==2.0.2
+nuitka==2.8.4
