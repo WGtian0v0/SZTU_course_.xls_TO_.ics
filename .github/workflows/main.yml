@@ -32,14 +32,7 @@ jobs:
     - name: Build with Nuitka
       run: |
         cd source
-        python -m nuitka --standalone --onefile --windows-console-mode=force --playwright-include-browser=all --assume-yes-for-downloads --include-package=icalendar --include-package=keyring --include-package=pandas --include-package=playwright --include-package=pytz --output-filename=../SZTU_course_xls2ics.exe main.py
-
-    - name: Verify build
-      run: |
-        echo "构建完成，检查文件..."
-        ls -la SZTU_course_xls2ics.exe
-        echo "文件大小: $(stat -c%s SZTU_course_xls2ics.exe) bytes"
-
+        python -m nuitka --standalone --onefile --windows-console-mode=force --playwright-include-browser=all --assume-yes-for-downloads --include-module=icalendar --include-module=keyring --include-module=pandas --include-module=playwright --include-module=pytz --output-filename=../SZTU_course_xls2ics.exe main.py
     - name: Upload executable
       uses: actions/upload-artifact@v4
       with:
