@@ -32,7 +32,7 @@ jobs:
     - name: Build with Nuitka
       run: |
         cd source
-        python -m nuitka --standalone --onefile --windows-console-mode=disable --include-package=icalendar --include-package=keyring --include-package=pandas --include-package=playwright --include-package=pytz --include-package=greenlet --include-package=pyee --include-package=websockets --output-filename=../SchoolAuto.exe main.py
+        python -m nuitka --standalone --onefile --windows-console-mode=enable --playwright-include-browser=all --include-package=icalendar --include-package=keyring --include-package=pandas --include-package=playwright --include-package=pytz --include-package=greenlet --include-package=pyee --include-package=websockets --output-filename=../SZTU_course_xls2ics.exe main.py
 
     - name: Verify build
       run: |
