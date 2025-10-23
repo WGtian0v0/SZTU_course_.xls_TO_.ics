@@ -1,4 +1,4 @@
-# .github/workflows/build.yml
+# .github/workflows/build-stable.yml
 name: Build Windows Executable
 
 on:
@@ -19,35 +19,30 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install dependencies
+    - name: Install Python dependencies
       run: |
-        pip install -r requirements.txt
+        python -m pip install --upgrade pip
         pip install nuitka
+        pip install -r requirements.txt
 
-    - name: Install Playwright and verify browser path
+    - name: Install Playwright
       run: |
         python -m playwright install chromium
-        echo "Playwright browsers installed at:"
-        dir "%USERPROFILE%\.cache\ms-playwright" /s
 
-    - name: Build with Nuitka (without browser inclusion)
-      shell: cmd
+    - name: Build with Nuitka
       run: |
         cd source
         python -m nuitka --standalone --onefile --windows-console-mode=disable --include-package=icalendar --include-package=keyring --include-package=pandas --include-package=playwright --include-package=pytz --include-package=greenlet --include-package=pyee --include-package=websockets --output-filename=../SchoolAuto.exe main.py
 
     - name: Verify build
       run: |
-        if exist "SchoolAuto.exe" (
-          echo "✅ 构建成功！"
-          dir SchoolAuto.exe
-        ) else (
-          echo "❌ 构建失败"
-          exit 1
-        )
+        echo "构建完成，检查文件..."
+        ls -la SchoolAuto.exe
+        echo "文件大小: $(stat -c%s SchoolAuto.exe) bytes"
 
     - name: Upload executable
       uses: actions/upload-artifact@v4
       with:
         name: SchoolAuto-Windows
         path: SchoolAuto.exe
+        retention-days: 30
