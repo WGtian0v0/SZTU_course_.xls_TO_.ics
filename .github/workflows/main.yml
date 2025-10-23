@@ -1,95 +1,53 @@
-# .github/workflows/build-windows.yml
+# .github/workflows/build.yml
 name: Build Windows Executable
 
 on:
   push:
     tags: ['v*']
-  release:
-    types: [published]
   workflow_dispatch:
 
-env:
-  PYTHON_VERSION: '3.10'
-  APP_NAME: 'SchoolAuto'
-
 jobs:
-  build-windows:
+  build:
     runs-on: windows-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
+    - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
+        python-version: '3.10'
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install nuitka
 
-    - name: Install Playwright browsers
+    - name: Install Playwright and verify browser path
       run: |
         python -m playwright install chromium
+        echo "Playwright browsers installed at:"
+        dir "%USERPROFILE%\.cache\ms-playwright" /s
 
-    - name: Build with Nuitka (PowerShell compatible)
+    - name: Build with Nuitka (without browser inclusion)
       shell: cmd
       run: |
         cd source
-        python -m nuitka --standalone --onefile --windows-console-mode=disable --include-package=icalendar --include-package=keyring --include-package=pandas --include-package=playwright --include-package=pytz --include-package=greenlet --include-package=pyee --include-package=websockets --include-data-dir=%USERPROFILE%\.cache\ms-playwright=playwright\browsers --output-dir=../dist --output-filename=${{ env.APP_NAME }}.exe main.py
+        python -m nuitka --standalone --onefile --windows-console-mode=disable --include-package=icalendar --include-package=keyring --include-package=pandas --include-package=playwright --include-package=pytz --include-package=greenlet --include-package=pyee --include-package=websockets --output-filename=../SchoolAuto.exe main.py
 
-    - name: Test executable
+    - name: Verify build
       run: |
-        if exist "dist\${{ env.APP_NAME }}.exe" (
-          echo "✅ 构建成功，文件已生成"
-          dir "dist\${{ env.APP_NAME }}.exe"
+        if exist "SchoolAuto.exe" (
+          echo "✅ 构建成功！"
+          dir SchoolAuto.exe
         ) else (
-          echo "❌ 构建失败，文件未生成"
+          echo "❌ 构建失败"
           exit 1
         )
 
-    - name: Create checksum
-      run: |
-        CertUtil -hashfile "dist\${{ env.APP_NAME }}.exe" SHA256 > "dist\${{ env.APP_NAME }}.sha256"
-
-    - name: Upload Windows artifact
+    - name: Upload executable
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.APP_NAME }}-Windows
-        path: |
-          dist/${{ env.APP_NAME }}.exe
-          dist/${{ env.APP_NAME }}.sha256
-        retention-days: 30
-
-  create-release:
-    needs: build-windows
-    runs-on: windows-latest
-    if: github.event_name == 'release'
-
-    steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ${{ env.APP_NAME }}-Windows/${{ env.APP_NAME }}.exe
-        body: |
-          SchoolAuto Windows 单文件可执行程序
-          
-          **构建信息:**
-          - 构建时间: ${{ github.event.release.created_at }}
-          - 提交版本: ${{ github.sha }}
-          
-          **包含依赖:**
-          - icalendar==6.3.1
-          - keyring==25.6.0
-          - pandas==2.3.3
-          - playwright==1.55.0
-          - pytz==2025.2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: SchoolAuto-Windows
+        path: SchoolAuto.exe
