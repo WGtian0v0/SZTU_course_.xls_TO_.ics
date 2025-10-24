@@ -87,12 +87,12 @@ def process_all(excel_file: str = CONFIG['excel_file']) -> None:
                 continue
 
             course_info_list = cell_str.split('\n')
-            print('原始课程信息行：', course_info_list)
+            #print('原始课程信息行：', course_info_list)
 
             infos = utils.get_info(course_info_list, default_class_and_grade=class_and_grade)
             for info in infos:
                 course, class_name, teacher, times, numbers, location = info
-                print('解析出：', course, class_name, teacher, times, numbers, location)
+                #print('解析出：', course, class_name, teacher, times, numbers, location)
                 #去除times前可能有的逗号
                 times = times.lstrip(',')
 
@@ -104,7 +104,7 @@ def process_all(excel_file: str = CONFIG['excel_file']) -> None:
                     for start_week, end_week in zip(*saw):
                         cal_mgr.add_event(course, class_name, teacher, times, numbers, location, start_week, end_week, j)
 
-            print('----------------------')
+            #print('----------------------')
             total_count += 1
 
     print(f'课程总数：{total_count}')

@@ -90,3 +90,4 @@ class CalendarManager:
         """将构建好的日历写入指定文件（默认 'courses.ics'）。"""
         with open(filename, 'wb') as f:
             f.write(self.calendar.to_ical())
+        print(f'日历已保存到 {filename}')

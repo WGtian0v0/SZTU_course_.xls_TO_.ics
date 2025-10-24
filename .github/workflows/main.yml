@@ -1,0 +1,41 @@
+# .github/workflows/build-stable.yml
+name: Build Windows Executable
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install nuitka
+        pip install -r requirements.txt
+
+    - name: Install Playwright
+      run: |
+        python -m playwright install chromium
+
+    - name: Build with Nuitka
+      run: |
+        cd source
+        python -m nuitka --standalone --onefile --windows-console-mode=force --playwright-include-browser=all --assume-yes-for-downloads --include-module=icalendar --include-module=keyring --include-module=pandas --include-module=playwright --include-module=pytz --output-filename=../SZTU_course_xls2ics.exe main.py
+    - name: Upload executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: SZTU_course_xls2ics-Windows
+        path: SZTU_course_xls2ics.exe
+        retention-days: 30
