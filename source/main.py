@@ -60,7 +60,7 @@ if __name__ == '__main__':
                 save_account(account, password)
                 print("账户密码已保存。")
         case '2':
-            file_path = input("请输入本地文件路径（含文件名及后缀）：")
+            file_path = input("请输入本地文件路径（含文件名及后缀）,可直接拖入文件：")
             process_all(file_path)
 
         case _:
