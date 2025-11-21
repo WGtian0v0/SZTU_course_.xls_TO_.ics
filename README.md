@@ -11,10 +11,15 @@
 > 安装官方python时注意勾选“Add Python 3.12 to PATH”
 
 ### 2.下载项目文件，解压。
->双击start.bat即可操作使用
+>双击start.bat即可操作使用（使用Anaconda注意激活环境）
 
 ### 3.打包成exe文件（可选）
->执行build.bat即可打包成exe文件。
+>执行build.bat即可打包成exe文件。（使用Anaconda注意激活环境）
 
 ## 大功告成！ヾ(@^▽^@)ノ
 （觉得好用不妨点个star😋。本人代码能力还有待提高，若遇到bug莫责怪o(╥﹏╥)o）
+
+## ~~Github Actions 自动构建~~
+~~基于Github Actions的构建功能，打包成exe文件供直接下载~~  
+由于打包文件过大，已没有必要继续使用该功能。需要打包成exe文件请使用build.bat自行打包。  
+最后一次打包记录：[SZTU_course_xls2ics-Windows](https://github.com/TigGrak/SZTU_course_.xls_TO_.ics/actions/runs/19558836599/artifacts/4636121301)
