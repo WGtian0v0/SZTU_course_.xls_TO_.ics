@@ -2,6 +2,7 @@ import re
 from typing import List, Tuple, TypeVar, Union
 from playwright.sync_api import sync_playwright
 import keyring
+from config import xls_url
 T = TypeVar('T')
 
 
@@ -188,7 +189,7 @@ def get_course_online(account, password, headless, download_path="./") -> tuple[
         try:
             print('尝试登录...')
             # 导航到页面
-            page.goto('https://jwxt.sztu.edu.cn/')
+            page.goto(xls_url)
             # 执行操作
             page.fill('input[name="j_username"]', account)
             page.fill('input[name="j_password"]', password)

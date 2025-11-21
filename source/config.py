@@ -13,3 +13,4 @@ TIME_LIST: List[str] = ['08:30', '9:15', '10:15', '11:00', '11:45',
                        '19:00', '19:40', '20:30', '21:10',
                        '18:00']
 
+xls_url = "https://jwxt-sztu-edu-cn-s.webvpn.sztu.edu.cn:8118"
