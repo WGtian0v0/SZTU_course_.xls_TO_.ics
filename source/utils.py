@@ -1,6 +1,8 @@
 import re
 from typing import List, Tuple, TypeVar, Union
-
+from playwright.sync_api import sync_playwright
+import keyring
+from config import JWXT_URL, JWXT_URL_WEBVPN, USE_WEBVPN
 T = TypeVar('T')
 
 
@@ -170,3 +172,148 @@ def get_info(lines: List[str], default_class_and_grade: str = "") -> List[Tuple[
     for l in ls2:
         results.extend(get_info(l, default_class_and_grade))
     return results
+
+
+
+def get_course_online(account, password, headless, download_path="./") -> tuple[bool, str, str]:
+    with sync_playwright() as p:
+        # 启动浏览器
+        print('尝试获取课表...')
+        browser = p.chromium.launch(headless=headless)
+        page = browser.new_page()
+        #状态
+        status = True
+        return_msg = 'Success'
+
+
+        try:
+            print('尝试登录...')
+            # 导航到页面
+            xls_url = JWXT_URL_WEBVPN if USE_WEBVPN else JWXT_URL
+            page.goto(xls_url)
+            # 执行操作
+            aap_login_method = page.locator('span[title="用户名密码认证"]')
+            aac_login_method = page.locator('span[title="用户名短信认证"]')
+            if aap_login_method.count() > 0:
+                print("检测到用户名密码输入框")
+                page.fill('input[name="j_username"]', account)
+                page.fill('input[name="j_password"]', password)
+                page.click('button[id="loginButton"]')
+
+            elif aac_login_method.count() > 0:
+                print("检测到用户名短信输入框")
+                page.fill('input[id="fs41_username"]', account)
+                page.click('#smsBtn1')
+                print("尝试发送验证码...")
+                sms = input("请输入收到的验证码：")
+                page.fill('input[id="sms1_otpOrSms"]', sms)
+                page.click('button[id="smsLoginBtn"]')
+                page.wait_for_load_state('networkidle')
+
+            # 等待导航完成
+            page.wait_for_load_state('networkidle')
+        except Exception as e:
+            return_msg = f'登录失败: {str(e)}'
+            page.screenshot(path="debug.png")
+            print(return_msg)
+            return status, return_msg, ''
+
+        try:
+            print('等待进入首页界面加载...')
+            # 使用 locator 获取 <a> 标签，它自带等待机制
+            home_button = page.locator('a:has-text("进入首页")')
+
+            # 强制显式等待元素出现在页面上可见，超时时间设为 10 秒 (防 webvpn 卡顿)
+            home_button.wait_for(state="visible", timeout=10000)
+
+            print("找到进入首页按钮，正在点击...")
+            home_button.click()
+
+            # 等待点击后的跳转加载完成
+            page.wait_for_load_state('networkidle')
+
+        except Exception as e:
+            status = False
+            return_msg = f'进入首页失败 (可能超时或元素未渲染): {str(e)}'
+            print(return_msg)
+            # 为了方便排错，如果失败截个图看看当前到底卡在什么页面
+            page.screenshot(path="debug.png")
+            return status, return_msg, ''
+
+
+
+
+        try:
+            print('尝试查询课表...')
+            parent_menus = [
+            "培养管理", "我的课表", "课表查询",
+            ]
+
+            # 先尝试点击父菜单展开
+            for menu_text in parent_menus:
+                try:
+                    # 查找包含该文本的 div.link (可点击的父菜单)
+                    parent_menu = page.locator(f'div.link:has-text("{menu_text}")')
+                    if parent_menu.count() > 0:
+                        print(f"找到父菜单: {menu_text}，正在点击展开...")
+                        parent_menu.click()
+                        page.wait_for_timeout(1000)  # 等待展开
+                except:
+                    continue
+            a_element = page.locator('#NEW_XSD_PYGL_WDKB_XQLLKB')
+            a_element.click()
+        except Exception as e:
+            status = False
+            return_msg = f'进入课表查询失败: {str(e)}'
+            print(return_msg)
+            page.screenshot(path="debug.png")
+            return status, return_msg, ''
+
+        page.wait_for_timeout(3000)
+
+        try:
+            print('尝试下载课表...')
+            # 监听下载事件
+            with page.expect_download() as download_info:
+                # 点击导出按钮
+                frame_locator = page.frame_locator('iframe >> nth=2')
+                export_btn = frame_locator.locator('input.button.el-button[value="导出"]')
+                export_btn.click()
+
+            # 获取下载对象
+            download = download_info.value
+            print(f"开始下载: {download.suggested_filename}")
+
+            download.save_as(f"{download_path}/{download.suggested_filename}")
+
+            print(f"文件已保存到: {download_path}/{download.suggested_filename}")
+        except Exception as e:
+            status = False
+            return_msg = f'下载课表失败: {str(e)}'
+            page.screenshot(path="debug.png")
+            return status, return_msg, ''
+        return status, return_msg, f"{download_path}/{download.suggested_filename}"
+
+
+def save_account(account: str, password: str) -> None:
+    """
+    保存账户密码到系统密钥链
+    """
+    keyring.set_password("course_converter", f"account", account)
+    keyring.set_password("course_converter", f"password", password)
+
+def get_account() -> tuple[bool, str, str]:
+    """
+    先检测是否有保存的账号密码，再获取保存的账户密码
+    """
+    account = keyring.get_password("course_converter", "account")
+    password = keyring.get_password("course_converter", "password")
+    if account and password:
+        return True, account, password
+    else:
+        return False, '', ''
+
+
+
+
+

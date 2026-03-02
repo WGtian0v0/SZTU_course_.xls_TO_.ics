@@ -1,5 +1,13 @@
 .idea
 .vscode
-.xls
-.ics
+*.xls
+*.xml
+*.ics
+source/*.ics
+source/*.xls
+source/main.build
+source/main.dist
+source/debug.png
+source/main.onefile-build
 test.py
+*.exe

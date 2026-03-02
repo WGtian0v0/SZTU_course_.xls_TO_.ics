@@ -1,5 +1,7 @@
-pandas
 icalendar
+keyring
+pandas
+playwright
 pytz
 xlrd
-openpyxl
+nuitka
