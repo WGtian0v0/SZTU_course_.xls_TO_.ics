@@ -2,7 +2,7 @@ import re
 from typing import List, Tuple, TypeVar, Union
 from playwright.sync_api import sync_playwright
 import keyring
-from config import xls_url
+from config import JWXT_URL, JWXT_URL_WEBVPN, USE_WEBVPN
 T = TypeVar('T')
 
 
@@ -189,28 +189,55 @@ def get_course_online(account, password, headless, download_path="./") -> tuple[
         try:
             print('尝试登录...')
             # 导航到页面
+            xls_url = JWXT_URL_WEBVPN if USE_WEBVPN else JWXT_URL
             page.goto(xls_url)
             # 执行操作
-            page.fill('input[name="j_username"]', account)
-            page.fill('input[name="j_password"]', password)
-            page.click('button[id="loginButton"]')
+            aap_login_method = page.locator('span[title="用户名密码认证"]')
+            aac_login_method = page.locator('span[title="用户名短信认证"]')
+            if aap_login_method.count() > 0:
+                print("检测到用户名密码输入框")
+                page.fill('input[name="j_username"]', account)
+                page.fill('input[name="j_password"]', password)
+                page.click('button[id="loginButton"]')
+
+            elif aac_login_method.count() > 0:
+                print("检测到用户名短信输入框")
+                page.fill('input[id="fs41_username"]', account)
+                page.click('#smsBtn1')
+                print("尝试发送验证码...")
+                sms = input("请输入收到的验证码：")
+                page.fill('input[id="sms1_otpOrSms"]', sms)
+                page.click('button[id="smsLoginBtn"]')
+                page.wait_for_load_state('networkidle')
+
             # 等待导航完成
             page.wait_for_load_state('networkidle')
         except Exception as e:
             return_msg = f'登录失败: {str(e)}'
+            page.screenshot(path="debug.png")
             print(return_msg)
             return status, return_msg, ''
 
         try:
-            print('进入首页')
-            home_button = page.query_selector('text=进入首页')
-            if home_button:
-                home_button.click()
+            print('等待进入首页界面加载...')
+            # 使用 locator 获取 <a> 标签，它自带等待机制
+            home_button = page.locator('a:has-text("进入首页")')
+
+            # 强制显式等待元素出现在页面上可见，超时时间设为 10 秒 (防 webvpn 卡顿)
+            home_button.wait_for(state="visible", timeout=10000)
+
+            print("找到进入首页按钮，正在点击...")
+            home_button.click()
+
+            # 等待点击后的跳转加载完成
             page.wait_for_load_state('networkidle')
+
         except Exception as e:
             status = False
-            return_msg = f'进入首页失败: {str(e)}'
+            return_msg = f'进入首页失败 (可能超时或元素未渲染): {str(e)}'
             print(return_msg)
+            # 为了方便排错，如果失败截个图看看当前到底卡在什么页面
+            page.screenshot(path="debug.png")
             return status, return_msg, ''
 
 
@@ -239,6 +266,7 @@ def get_course_online(account, password, headless, download_path="./") -> tuple[
             status = False
             return_msg = f'进入课表查询失败: {str(e)}'
             print(return_msg)
+            page.screenshot(path="debug.png")
             return status, return_msg, ''
 
         page.wait_for_timeout(3000)
@@ -262,6 +290,7 @@ def get_course_online(account, password, headless, download_path="./") -> tuple[
         except Exception as e:
             status = False
             return_msg = f'下载课表失败: {str(e)}'
+            page.screenshot(path="debug.png")
             return status, return_msg, ''
         return status, return_msg, f"{download_path}/{download.suggested_filename}"
 

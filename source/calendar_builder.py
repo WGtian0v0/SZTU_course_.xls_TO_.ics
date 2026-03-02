@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from typing import List
-from icalendar import Calendar, Event, Timezone, TimezoneStandard
+from icalendar import Calendar, Event, Timezone, TimezoneStandard, vText
 import pytz
-from config import CONFIG, TIME_LIST
+from config import SEMESTER_START, TIME_LIST
 
 
 class CalendarManager:
@@ -52,7 +52,8 @@ class CalendarManager:
         Returns:
             None。函数将事件添加到 `self.calendar`。
         """
-        semester_start = CONFIG['semester_start']
+        year, month, day = [int(x) for x in SEMESTER_START.split('-')]
+        semester_start = datetime(year, month, day)
         start_number = numbers[0]
         end_number = numbers[-1]
         start_time = datetime.strptime(TIME_LIST[start_number - 1], "%H:%M").time()
@@ -77,8 +78,9 @@ class CalendarManager:
             self._added.add(key)
 
             event = Event()
+            description_text = f"地点：{location} | 教师：{teacher} | 班级：{class_name} | 周次：{times}"
             event.add('summary', course)
-            event.add('description', location + '\n' + teacher + '\n' + class_name + '\n' + times)
+            event.add('description', description_text)
             event.add('location', location)
             event.add('dtstart', dtstart)
             event['dtstart'].params['TZID'] = 'Asia/Shanghai'

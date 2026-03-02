@@ -1,10 +1,9 @@
 import pandas as pd
-from config import CONFIG
 import utils
 from calendar_builder import CalendarManager
 
 
-def process_all(excel_file: str = CONFIG['excel_file']) -> None:
+def process_all(excel_file: str) -> None:
     """主处理流程：读取 Excel、清理表格、解析课程并构建日历
 
     Args:
@@ -93,6 +92,7 @@ def process_all(excel_file: str = CONFIG['excel_file']) -> None:
             for info in infos:
                 course, class_name, teacher, times, numbers, location = info
                 #print('解析出：', course, class_name, teacher, times, numbers, location)
+                # 尤其针对可能包含换行的字段进行处理
                 #去除times前可能有的逗号
                 times = times.lstrip(',')
 
