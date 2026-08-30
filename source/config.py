@@ -1,5 +1,5 @@
 # 学期开始日期（请根据实际情况修改，格式为 'YYYY-MM-DD'）
-SEMESTER_START = "2026-03-02"
+SEMESTER_START = "2026-08-31"
 
 # 是否使用webvpn连接 (如果你在校外且无法直接访问学校网络，请将此项设置为 True)
 USE_WEBVPN = True
